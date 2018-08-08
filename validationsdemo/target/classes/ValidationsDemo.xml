@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:jms="http://www.mulesoft.org/schema/mule/jms" xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:json="http://www.mulesoft.org/schema/mule/json" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:validation="http://www.mulesoft.org/schema/mule/validation" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd
+http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/current/mule-jms.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd">
+    <http:listener-config name="HTTP_Listener_Configuration" host="0.0.0.0" port="8081" doc:name="HTTP Listener Configuration"/>
+    <db:oracle-config name="Oracle_Configuration" doc:name="Oracle Configuration"/>
+    <sub-flow name="PublishToJMSSubFlow">
+        <jms:outbound-endpoint doc:name="JMS"/>
+    </sub-flow>
+    <flow name="validationsdemoFlow">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="/validate" allowedMethods="POST" doc:name="HTTP"/>
+        <json:json-to-object-transformer returnClass="java.util.Map" doc:name="JSON to Object"/>
+        <dw:transform-message doc:name="Transform Message">
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/java
+---
+{
+	"customerID":988,
+	"customerName":"Varun"
+}]]></dw:set-payload>
+        </dw:transform-message>
+        <logger message="Invoking validations demo api and recieved payload is : #[payload.CustomerEmail]" level="INFO" doc:name="Entry Log"/>
+        <validation:all   doc:name="Validation">
+            <validation:validations>
+                <validation:is-email email="#[payload.CustomerEmail]" message="Invalid email address"/>
+                <validation:is-not-empty value="#[payload.CustomerEmail]" message="CustomerEmail required"/>
+                <validation:is-not-empty value="#[payload.CustomerPhone]" message="CustomerPhone required"/>
+                <validation:matches-regex value="#[payload.DOB]" regex="^([0-2][0-9]|(3)[0-1])(\/)(((0)[0-9])|((1)[0-2]))(\/)\d{4}$" message="Invalid dat format for DOB"/>
+                <validation:validate-size value="#[payload.CustomerPhone]" min="10" max="10" message="Invalid phone number"/>
+            </validation:validations>
+        </validation:all>
+        <set-variable variableName="customerValidation" value="#[payload]" doc:name="Variable"/>
+        <flow-ref name="PublishToJMSSubFlow" doc:name="PublishToJMSSubFlow"/>
+        <flow-ref name="InsertCustomerSubFlow" doc:name="InsertCustomerSubFlow"/>
+        <choice-exception-strategy doc:name="Choice Exception Strategy">
+            <catch-exception-strategy when="#[exception.causedBy(org.mule.extension.validation.api.MultipleValidationException)]" doc:name="Catch Exception Strategy">
+                <set-payload value="#[exception.cause.?message or exception.cause]" doc:name="Set Payload"/>
+                <logger message="9999999999 #[payload]" level="INFO" doc:name="Logger"/>
+                <dw:transform-message doc:name="Transform Message">
+                    <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+{
+	"Status":400,
+	"Message":payload
+}]]></dw:set-payload>
+                </dw:transform-message>
+                <set-property propertyName="http.status" value="400" doc:name="Property"/>
+                <set-property propertyName="http.reason" value="Bad request" doc:name="Property"/>
+            </catch-exception-strategy>
+            <catch-exception-strategy doc:name="Catch Exception Strategy">
+                <dw:transform-message doc:name="Transform Message">
+                    <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+{
+	"Status":500,
+	"Message":"Internal server error"
+}]]></dw:set-payload>
+                </dw:transform-message>
+                <set-property propertyName="http.status" value="500" doc:name="Property"/>
+                <set-property doc:name="Property" propertyName="http.reason" value="Internal server error"/>
+            </catch-exception-strategy>
+        </choice-exception-strategy>
+    </flow>
+    <flow name="InsertCustomerSubFlow">
+        <db:no-operation-selected config-ref="Oracle_Configuration" doc:name="Database"/>
+    </flow>
+</mule>
