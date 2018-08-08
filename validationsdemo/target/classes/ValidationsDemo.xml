@@ -14,9 +14,6 @@ http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/
 http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd">
     <http:listener-config name="HTTP_Listener_Configuration" host="0.0.0.0" port="8081" doc:name="HTTP Listener Configuration"/>
     <db:oracle-config name="Oracle_Configuration" doc:name="Oracle Configuration"/>
-    <sub-flow name="PublishToJMSSubFlow">
-        <jms:outbound-endpoint doc:name="JMS"/>
-    </sub-flow>
     <flow name="validationsdemoFlow">
         <http:listener config-ref="HTTP_Listener_Configuration" path="/validate" allowedMethods="POST" doc:name="HTTP"/>
         <json:json-to-object-transformer returnClass="java.util.Map" doc:name="JSON to Object"/>
@@ -39,9 +36,7 @@ http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/m
                 <validation:validate-size value="#[payload.CustomerPhone]" min="10" max="10" message="Invalid phone number"/>
             </validation:validations>
         </validation:all>
-        <set-variable variableName="customerValidation" value="#[payload]" doc:name="Variable"/>
-        <flow-ref name="PublishToJMSSubFlow" doc:name="PublishToJMSSubFlow"/>
-        <flow-ref name="InsertCustomerSubFlow" doc:name="InsertCustomerSubFlow"/>
+        <logger message="Completed validations demo flow exeution" level="INFO" doc:name="Exit Log"/>
         <choice-exception-strategy doc:name="Choice Exception Strategy">
             <catch-exception-strategy when="#[exception.causedBy(org.mule.extension.validation.api.MultipleValidationException)]" doc:name="Catch Exception Strategy">
                 <set-payload value="#[exception.cause.?message or exception.cause]" doc:name="Set Payload"/>
@@ -72,8 +67,5 @@ http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/m
                 <set-property doc:name="Property" propertyName="http.reason" value="Internal server error"/>
             </catch-exception-strategy>
         </choice-exception-strategy>
-    </flow>
-    <flow name="InsertCustomerSubFlow">
-        <db:no-operation-selected config-ref="Oracle_Configuration" doc:name="Database"/>
     </flow>
 </mule>
