@@ -37,6 +37,15 @@ http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/m
             </validation:validations>
         </validation:all>
         <logger message="Completed validations demo flow " level="INFO" doc:name="Exit Log"/>
+        <dw:transform-message doc:name="Transform Message">
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+{
+	"Status": 200,
+	"Message": "Success"
+}]]></dw:set-payload>
+        </dw:transform-message>
         <choice-exception-strategy doc:name="Choice Exception Strategy">
             <catch-exception-strategy when="#[exception.causedBy(org.mule.extension.validation.api.MultipleValidationException)]" doc:name="Catch Exception Strategy">
                 <set-payload value="#[exception.cause.?message or exception.cause]" doc:name="Set Payload"/>
