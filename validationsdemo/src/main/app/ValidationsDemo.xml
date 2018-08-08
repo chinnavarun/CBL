@@ -36,7 +36,7 @@ http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/m
                 <validation:validate-size value="#[payload.CustomerPhone]" min="10" max="10" message="Invalid phone number"/>
             </validation:validations>
         </validation:all>
-        <logger message="Completed validations demo flow exeution" level="INFO" doc:name="Exit Log"/>
+        <logger message="Completed validations demo flow " level="INFO" doc:name="Exit Log"/>
         <choice-exception-strategy doc:name="Choice Exception Strategy">
             <catch-exception-strategy when="#[exception.causedBy(org.mule.extension.validation.api.MultipleValidationException)]" doc:name="Catch Exception Strategy">
                 <set-payload value="#[exception.cause.?message or exception.cause]" doc:name="Set Payload"/>
