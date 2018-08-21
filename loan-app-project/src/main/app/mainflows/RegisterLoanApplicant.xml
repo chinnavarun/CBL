@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:validation="http://www.mulesoft.org/schema/mule/validation"
+	xmlns:json="http://www.mulesoft.org/schema/mule/json"
+	xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd
+http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
+http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
+http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd">
+
+<validation:config name="Validation_Configuration" doc:name="Validation Configuration"/>
+    <db:oracle-config name="Oracle_Test_Configuration" host="${db.test.host}" port="${db.test.port}" instance="${db.test.instance}" user="${db.test.user}" password="${db.test.password}" doc:name="Oracle Configuration"/>
+   
+  
+<flow name="post:/register-user:loanapp-config">
+        <json:json-to-object-transformer returnClass="java.util.Map" doc:name="JSON to Object"/>
+        <logger message="===Start of the flow===#[payload]" level="INFO" doc:name="Entry Logger"/>
+        <validation:all config-ref="Validation_Configuration" doc:name="User Register Validation">
+            <validation:validations>
+                <validation:is-email email="#[payload.email]" message="Invalid email address"/>
+                <validation:is-not-empty value="#[payload.firstname]" message="First name must not be empty"/>
+                <validation:matches-regex value="#[payload.username]" regex="^[a-zA-Z0-9_-]{6,14}$" message="User name should be between 6 to 14 characters. It may contain upper,lower case and numbers"/>
+                <validation:matches-regex value="#[payload.userpassword]" regex="^([a-zA-Z0-9@*#$]{8,15})$" message="password must have an upper,lower cases , a number and special character. Password strength should be atleast 8 characters"/>
+                <validation:validate-size value="#[payload.phone]" min="10" max="10" message="Invalid phone number.Enter a valid phone number"/>
+            </validation:validations>
+        </validation:all>
+        <set-variable variableName="userCheck" value="#[payload]" doc:name="Set Received Payload To Variable"/>
+        <flow-ref name="UserCheckDatabase-Subflow" doc:name="UserCheckDatabase-Reference"/>
+        <choice doc:name="Choice">
+            <when expression="#[payload == empty]">
+                <flow-ref name="UserRegisterDatabase-Subflow" doc:name="UserRegisterDatabase-reference"/>
+                <dw:transform-message doc:name="Status Response">
+                    <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+{
+    "Status" : 200,
+    "Message" : "Customer registration completed"
+}]]></dw:set-payload>
+                </dw:transform-message>
+                <logger message="=====UserRegisterLogger===#[payload]" level="INFO" doc:name="Register Exit Logger"/>
+            </when>
+            <otherwise>
+                <dw:transform-message doc:name="Default Message">
+                    <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+{
+	"Message": "User with same user name or email already exists"
+}]]></dw:set-payload>
+                </dw:transform-message>
+                <set-property propertyName="http.status" value="404" doc:name="Default Status"/>
+                <set-property propertyName="http.response" value="Bad request" doc:name="Default Request"/>
+            </otherwise>
+        </choice>
+        <logger message="===End of the flow===#[payload]" level="INFO" doc:name="End Flow Logger"/>
+        <choice-exception-strategy doc:name="Loan-App-Main-FlowChoice_Exception_Strategy">
+            <catch-exception-strategy doc:name="Catch Exception Strategy" when="#[exception.causedBy(org.mule.extension.validation.api.MultipleValidationException)]">
+                <set-payload value="#[exception.cause.?message or exception.cause]" doc:name="Catch Error"/>
+                <logger message="#[payload]" level="INFO" doc:name="Catch Error Logger Flow"/>
+                <dw:transform-message doc:name="Status Response">
+                    <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+{
+	"Status": 400,
+	"Message":payload
+}]]></dw:set-payload>
+                </dw:transform-message>
+                <set-property propertyName="http.status" value="400" doc:name="Status"/>
+                <set-property propertyName="http.response" value="Bad request" doc:name="Response"/>
+            </catch-exception-strategy>
+            <catch-exception-strategy doc:name="Catch Exception Strategy">
+                <dw:transform-message doc:name="Status Response">
+                    <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+{
+   "Status": 500,
+   "Message": "Internal server error while add"
+  }     ]]></dw:set-payload>
+                </dw:transform-message>
+                <set-property doc:name="Status" propertyName="http.status" value="500"/>
+                <set-property doc:name="Reponse" propertyName="http.response" value="Internal server error"/>
+            </catch-exception-strategy>
+        </choice-exception-strategy>
+    </flow>
+
+
+
+
+
+</mule>

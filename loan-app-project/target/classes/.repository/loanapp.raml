@@ -1,0 +1,69 @@
+#%RAML 1.0
+version: v1
+title: loanapp
+baseUri: http://localhost:8081/loan
+/register-user:
+   post:
+    description: Customers registering for loan
+    body:
+      application/json:
+        example:
+              {
+                "applicantid": 3,
+                "firstname": "pradeep",
+                "lastname": "chennam",
+                "username": "pradepchenn",
+                "userpassword": "Pradeep1",
+                "email": "pradeepchennam@gmail.com",
+                "phone": "5641237895",
+                "createdate": "05/15/2018"
+              }
+    responses: 
+      200:
+        body: 
+         application/json:
+           example:
+             {
+                    "Status": 200,
+                    "Message": "customer registration completed"
+             }
+
+      400:
+        body: 
+          application/json:
+            example:
+               {
+                    "Status": 400,
+                    "Message": "Invalid data(Bad Request)"
+                  }
+      403:
+       body:
+         application/json:
+            example:
+                {
+                  "Status": 403,
+                  "Message": "Error while authentication"
+                }
+
+      401:
+       body:
+         application/json:
+            example:
+                {
+                  "Status": 401,
+                  "Message": "Unauthorized access"
+                }  
+
+      500:
+       body:
+         application/json:
+            example:
+                {
+                  "Status": 500,
+                  "Message": "Internal server error while add"
+                }                          
+      
+            
+                 
+        
+     

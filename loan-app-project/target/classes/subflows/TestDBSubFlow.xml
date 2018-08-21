@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd">
+
+ <sub-flow name="UserRegisterDatabase-Subflow">
+        <logger message="Start of the Register subflow Logger" level="INFO" doc:name="User Register Start Logger"/>
+        <db:insert config-ref="Oracle_Test_Configuration" doc:name="User Register Database">
+            <db:parameterized-query><![CDATA[insert into loanapplicant (applicantid,firstname,lastname,username,userpassword,createdate,phone,email) values (register_loanapplicant.nextval,#[flowVars.usercheck.firstname],#[flowVars.usercheck.lastname],#[flowVars.usercheck.username],#[flowVars.usercheck.userpassword],sysdate,#[flowVars.usercheck.phone],#[flowVars.usercheck.email])]]></db:parameterized-query>
+        </db:insert>
+        <logger message="End of the user register logger" level="INFO" doc:name="User Register End Logger"/>
+    </sub-flow>
+    
+    
+    
+     <sub-flow name="UserCheckDatabase-Subflow">
+        <logger message="Calling database to check user exit logger " level="INFO" doc:name="User Check Start Logger"/>
+        <db:select config-ref="Oracle_Test_Configuration" doc:name="User Check Database">
+            <db:parameterized-query><![CDATA[select * from loanapplicant where username=#[payload.username] and email=#[payload.email]]]></db:parameterized-query>
+        </db:select>
+        <logger message="End of the user check logger: #[payload]" level="INFO" doc:name="User Check End Logger"/>
+    </sub-flow>
+
+
+
+</mule>
