@@ -4,11 +4,11 @@ http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/htt
 http://www.mulesoft.org/schema/mule/apikit http://www.mulesoft.org/schema/mule/apikit/current/mule-apikit.xsd
 http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
 http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-current.xsd">
-    <http:listener-config name="loanapp-httpListenerConfig" host="0.0.0.0" port="${http.port}" doc:name="HTTP Listener Configuration" basePath="/loan"/>
+    
     <apikit:config name="loanapp-config" raml="loanapp.raml" consoleEnabled="false" doc:name="Router" keepRamlBaseUri="false">
         <apikit:flow-mapping resource="/register-user" action="post" content-type="application/json" flow-ref="post:/register-user:loanapp-config"/>
     </apikit:config>
-    <context:property-placeholder location="${env}.properties"/>
+    
     <flow name="loanapp-main">
         <http:listener config-ref="loanapp-httpListenerConfig" path="/api/*" doc:name="HTTP"/>
         <apikit:router config-ref="loanapp-config" doc:name="APIkit Router"/>

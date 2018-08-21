@@ -16,7 +16,7 @@ http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/cor
 http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd">
 
 <validation:config name="Validation_Configuration" doc:name="Validation Configuration"/>
-    <db:oracle-config name="Oracle_Test_Configuration" host="${db.test.host}" port="${db.test.port}" instance="${db.test.instance}" user="${db.test.user}" password="${db.test.password}" doc:name="Oracle Configuration"/>
+    
    
   
 <flow name="post:/register-user:loanapp-config">

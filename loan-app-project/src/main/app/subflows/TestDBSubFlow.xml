@@ -11,7 +11,7 @@ http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/cor
  <sub-flow name="UserRegisterDatabase-Subflow">
         <logger message="Start of the Register subflow Logger" level="INFO" doc:name="User Register Start Logger"/>
         <db:insert config-ref="Oracle_Test_Configuration" doc:name="User Register Database">
-            <db:parameterized-query><![CDATA[insert into loanapplicant (applicantid,firstname,lastname,username,userpassword,createdate,phone,email) values (register_loanapplicant.nextval,#[flowVars.usercheck.firstname],#[flowVars.usercheck.lastname],#[flowVars.usercheck.username],#[flowVars.usercheck.userpassword],sysdate,#[flowVars.usercheck.phone],#[flowVars.usercheck.email])]]></db:parameterized-query>
+            <db:parameterized-query><![CDATA[insert into loanapplicant (applicantid,firstname,lastname,username,userpassword,createdate,phone,email) values (register_loanapplicant.nextval,#[flowVars.userCheck.firstname],#[flowVars.userCheck.lastname],#[flowVars.userCheck.username],#[flowVars.userCheck.userpassword],sysdate,#[flowVars.userCheck.phone],#[flowVars.userCheck.email])]]></db:parameterized-query>
         </db:insert>
         <logger message="End of the user register logger" level="INFO" doc:name="User Register End Logger"/>
     </sub-flow>
