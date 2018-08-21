@@ -21,7 +21,7 @@ http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/m
   
 <flow name="post:/register-user:loanapp-config">
         <json:json-to-object-transformer returnClass="java.util.Map" doc:name="JSON to Object"/>
-        <logger message="===Start of the flow===#[payload]" level="INFO" doc:name="Entry Logger"/>
+        <logger message="Starting register loan applicant api : #[payload]" level="INFO" doc:name="Entry Logger"/>
         <validation:all config-ref="Validation_Configuration" doc:name="User Register Validation">
             <validation:validations>
                 <validation:is-email email="#[payload.email]" message="Invalid email address"/>
