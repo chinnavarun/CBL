@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:metadata="http://www.mulesoft.org/schema/mule/metadata" xmlns:json="http://www.mulesoft.org/schema/mule/json" xmlns:validation="http://www.mulesoft.org/schema/mule/validation" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
+http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd">
+    
+<flow name="post:/login:loneapplication-config">
+        <json:json-to-object-transformer returnClass="java.util.Map" doc:name="Mapping JSON Payload"/>
+        <logger message="Checking user applicant is valid or not#[payload]" level="INFO" doc:name="Entry Log"/>
+        <validation:all doc:name="Validation">
+            <validation:validations>
+                <validation:is-not-empty value="#[payload.password]" message="Invalid password"/>
+                <validation:is-not-empty value="#[payload.username]" message="Invalid User"/>
+            </validation:validations>
+        </validation:all>
+        <flow-ref name="DataBaseOperation" doc:name="DataBaseOperation"/>
+        <logger message="Getting User Data from database as:#[payload]" level="INFO" doc:name="Exit Log"/>
+        <choice doc:name="CheckingCondition">
+            <when expression="payload.size() &gt;0">
+                <dw:transform-message doc:name="Success Response">
+                    <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+{
+"Status" : 200,
+"Message" : "Success"
+}
+]]></dw:set-payload>
+                </dw:transform-message>
+                <set-property propertyName="http.Status" value="200" doc:name="Status Header"/>
+                <set-property propertyName="http.Response" value="Success" doc:name="Response Header"/>
+            </when>
+            <otherwise>
+                <dw:transform-message doc:name="Bad Response">
+                    <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+{
+	"Status":404,
+	"Message":"Invalid UserName/Password"
+}]]></dw:set-payload>
+                </dw:transform-message>
+                <set-property propertyName="http.Status" value="404" doc:name="Status Header"/>
+                <set-property propertyName="http.Response" value="Invalid User/Password" doc:name="Response Header"/>
+            </otherwise>
+        </choice>
+        <exception-strategy ref="ExceptionHandlingChoice_Exception_Strategy" doc:name="Reference Exception Strategy"/>
+    </flow>
+</mule>
