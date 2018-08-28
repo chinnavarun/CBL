@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:json="http://www.mulesoft.org/schema/mule/json" xmlns:validation="http://www.mulesoft.org/schema/mule/validation" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
+http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd">
+   <validation:config name="Validation_Configuration" doc:name="Validation Configuration"/>
+    <flow name="post:/Credentials:credentials-config">
+        <json:json-to-object-transformer returnClass="java.util.Map" doc:name="JSON to Map"/>
+        <flow-ref name="DatabaseSubflow" doc:name="Database Flow Reference"/>
+        <logger message="#[payload]" level="INFO" doc:name="Entry Logger"/>
+        <validation:all config-ref="Validation_Configuration" doc:name="Data Validation">
+            <validation:validations>
+                <validation:is-not-empty value="#[payload.UserName]" message="UserName Required"/>
+                <validation:is-not-empty value="#[payload.Password]" message="Password Required"/>
+            </validation:validations>
+        </validation:all>
+        <choice doc:name="Choice">
+            <when expression="payload.soze()&gt;0">
+                <dw:transform-message doc:name="Login Success">
+                    <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+{
+	"Status": 200,
+	"Message": "Success"
+}]]></dw:set-payload>
+                </dw:transform-message>
+                <set-property propertyName="http.status" value="200" doc:name="Status"/>
+                <set-property propertyName="http.message" value="Success" doc:name="Response"/>
+            </when>
+            <otherwise>
+                <dw:transform-message doc:name="Login Failed">
+                    <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+{
+	"Status": 400,
+	"Message": "Invalied user"
+}]]></dw:set-payload>
+                </dw:transform-message>
+                <set-property propertyName="http.status" value="400" doc:name="Status"/>
+                <set-property propertyName="http.message" value="Invalied User" doc:name="Response"/>
+            </otherwise>
+        </choice>
+        <logger message="#[payload]" level="INFO" doc:name="Exit Logger"/>
+    </flow>
+</mule>
