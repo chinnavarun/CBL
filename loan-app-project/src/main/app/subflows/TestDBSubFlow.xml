@@ -17,15 +17,17 @@ http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/cor
     </sub-flow>
     <sub-flow name="DataBaseOperation">
         <logger message="#[payload]" level="INFO" doc:name="Entry Log"/>
-        <db:select config-ref="Oracle_cbl_Configuration" doc:name="Fetching Applicant Data">
+        <db:select config-ref="Oracle_Test_Configuration" doc:name="Fetching Applicant Data">
             <db:parameterized-query><![CDATA[select username as username, password as password from loan_applicant where username=#[payload.username] and password=#[payload.password]]]></db:parameterized-query>
+
         </db:select>
         <logger message="#[payload]" level="INFO" doc:name="Exit Log"/>
     </sub-flow>
     <sub-flow name="UpdataingDataBase">
         <logger message="After validating payload data will come here as:#[payload]" level="INFO" doc:name="BeforeUpdatingPayload"/>
-        <db:update config-ref="Oracle_cbl_Configuration" doc:name="Updating Payload In DataBase">
+        <db:update config-ref="Oracle_Test_Configuration" doc:name="Updating Payload In DataBase">
             <db:parameterized-query><![CDATA[update loan_applicant set password=#[payload.password] where email=#[payload.email]]]></db:parameterized-query>
+
         </db:update>
         <logger message="Data is Updated as:#[payload]" level="INFO" doc:name="AfterUpdatingPayload"/>
     </sub-flow>
