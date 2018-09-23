@@ -13,20 +13,12 @@ http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/cu
 http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/current/mule-jms.xsd
 http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd">
     <http:listener-config name="HTTP_Listener_Configuration" host="0.0.0.0" port="8081" doc:name="HTTP Listener Configuration" basePath="demo"/>
-    <db:oracle-config name="Oracle_Configuration" doc:name="Oracle Configuration"/>
+    <db:oracle-config name="Oracle_Configuration" doc:name="Oracle Configuration" host="localhost" instance="xe" password="1234" port="1521" user="cbl"/>
     <flow name="validationsdemoFlow">
         <http:listener config-ref="HTTP_Listener_Configuration" path="/valid" allowedMethods="POST" doc:name="HTTP"/>
         <json:json-to-object-transformer returnClass="java.util.Map" doc:name="JSON to Object"/>
-        <dw:transform-message doc:name="Transform Message">
-            <dw:set-payload><![CDATA[%dw 1.0
-%output application/java
----
-{
-	"customerID":988,
-	"customerName":"Varun"
-}]]></dw:set-payload>
-        </dw:transform-message>
-        <logger message="Invoking validations demo api and recieved payload is : #[payload.CustomerEmail]" level="INFO" doc:name="Entry Log"/>
+
+        <logger message="Invoking validations demo api and recieved payload is :" level="INFO" doc:name="Entry Log"/>
         <validation:all   doc:name="Validation">
             <validation:validations>
                 <validation:is-email email="#[payload.CustomerEmail]" message="Invalid email address"/>
@@ -36,16 +28,11 @@ http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/m
                 <validation:validate-size value="#[payload.CustomerPhone]" min="10" max="10" message="Invalid phone number"/>
             </validation:validations>
         </validation:all>
-        <logger message="Completed validations demo flow " level="INFO" doc:name="Exit Log"/>
-        <dw:transform-message doc:name="Transform Message">
-            <dw:set-payload><![CDATA[%dw 1.0
-%output application/json
----
-{
-	"Status": 200,
-	"Message": "Success"
-}]]></dw:set-payload>
-        </dw:transform-message>
+        <db:select config-ref="Oracle_Configuration" doc:name="Database">
+            <db:parameterized-query><![CDATA[insert into Customer values(#[payload.CustomerId],#[payload.CustomerName],#[payload.CustomerAddress],#[payload.CustomerEmail],#[payload.CustomerPhone])]]></db:parameterized-query>
+        </db:select>
+        <logger message="Completed validations demo flow: " level="INFO" doc:name="Exit Log"/>
+
         <choice-exception-strategy doc:name="Choice Exception Strategy">
             <catch-exception-strategy when="#[exception.causedBy(org.mule.extension.validation.api.MultipleValidationException)]" doc:name="Catch Exception Strategy">
                 <set-payload value="#[exception.cause.?message or exception.cause]" doc:name="Set Payload"/>
